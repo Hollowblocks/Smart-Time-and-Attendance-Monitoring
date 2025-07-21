@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+pymysql
+bcrypt
+pyjwt
+python-multipart
+deepface
+pydantic
