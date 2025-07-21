@@ -6,3 +6,5 @@ pyjwt
 python-multipart
 deepface
 pydantic
+numpy
+pytest

@@ -124,7 +124,7 @@ async def logout(emp_no: str = Depends(get_current_user), authorization: str = H
     )
 
 
-
+'''
 session = boto3.Session(profile_name="aws-user")
 
 #
@@ -164,6 +164,8 @@ async def test_amazon():
     except (BotoCoreError, ClientError) as e:
         print("AWS Rekognition error:", e)
         return {"error": str(e)}
+'''
+
 @app.post("/register_face/")
 async def register_face(
     file: UploadFile = File(...),
@@ -470,14 +472,8 @@ async def login(data: LoginRequest, request: Request):
     finally:
         cursor.close()
         db.close()
-import boto3
-from fastapi import UploadFile, File, Form, Depends, Request, HTTPException, status
-import os
-import logging
-from datetime import datetime
-from io import BytesIO
 
-rekognition = boto3.client("rekognition", region_name="ap-southeast-1") 
+
 
 @app.post("/recognize_face/")
 async def recognize_face(
@@ -490,42 +486,56 @@ async def recognize_face(
     cursor = db.cursor()
 
     try:
+        # ✅ Validate IP address
         client_ip = request.client.host
         cursor.execute("SELECT COUNT(*) FROM valid_ip WHERE ip = %s", (client_ip,))
         if cursor.fetchone()[0] == 0:
             raise HTTPException(status_code=403, detail="Access denied from this IP address")
 
+        # ✅ Save uploaded image to temp file
+        file_location = f"temp_{emp_no}.jpg"
+        with open(file_location, "wb") as buffer:
+            buffer.write(await file.read())
 
-        uploaded_image_bytes = await file.read()
-
-
+        # ✅ Get stored face image from DB
         cursor.execute("SELECT image FROM face_image WHERE emp_no = %s", (emp_no,))
         stored_image = cursor.fetchone()
 
         if not stored_image or not stored_image[0]:
+            os.remove(file_location)
             logging.error(f"No stored image for emp_no {emp_no}")
             raise HTTPException(status_code=404, detail="No stored image found for this employee")
 
-        stored_image_bytes = stored_image[0]
+        #  Save stored image to temp file
+        stored_image_path = f"stored_{emp_no}.jpg"
+        with open(stored_image_path, "wb") as f:
+            f.write(stored_image[0])
 
-
-        response = rekognition.compare_faces(
-            SourceImage={'Bytes': uploaded_image_bytes},
-            TargetImage={'Bytes': stored_image_bytes},
-            SimilarityThreshold=90  # You can adjust this threshold
+        #  Run DeepFace face verification
+        result = DeepFace.verify(
+            img1_path=file_location,
+            img2_path=stored_image_path,
+            model_name="Facenet",    #"VGG-Face", "ArcFace"
+            enforce_detection=True,
+            detector_backend="opencv",  
+            distance_metric="cosine",
+            threshold=0.6  
         )
 
-        if response['FaceMatches']:
-            print(f"face matched")
-            similarity = response['FaceMatches'][0]['Similarity']
-            logging.info(f"✅ Face matched for {emp_no} with {similarity:.2f}% similarity")
+        #  Clean up temp files
+        os.remove(file_location)
+        os.remove(stored_image_path)
+
+        if result["verified"]:
+            similarity = result["distance"]
+            logging.info(f"✅ DeepFace matched for {emp_no}, distance: {similarity:.4f}")
 
             now = datetime.now()
             formatted_date = now.strftime('%Y-%m-%d_%Hh%Mm%Ss')
             date, time_str = now.strftime('%Y-%m-%d'), now.strftime('%H:%M:%S %p')
             filename = os.path.join(emp_no, f"{formatted_date}.jpg")
 
-
+            #  Log successful match
             cursor.execute(
                 "INSERT INTO tbl_extracted_logs (EMP_NO, LOG_DATE, LOG_TIME, LOG_MODE, LOG_IMG_PATH) VALUES (%s, %s, %s, %s, %s)",
                 (emp_no, date, time_str, log, filename)
@@ -534,7 +544,7 @@ async def recognize_face(
 
             return {"message": "Face recognized successfully", "data": emp_no}
         else:
-            logging.warning(f"⚠️ No match for emp_no {emp_no}")
+            logging.warning(f"⚠️ Face not recognized for {emp_no}")
             raise HTTPException(status_code=401, detail="Face not recognized")
 
     except Exception as e:
@@ -572,7 +582,7 @@ async def get_log_data(emp_no: str = Depends(get_current_user)):
     db = dbconnect()
     cursor = db.cursor(cursor=DictCursor)
     try:
-        # Add debug log
+        #debug log
         print(f"Fetching logs for employee: {emp_no}")
         
         cursor.execute(
@@ -584,7 +594,7 @@ async def get_log_data(emp_no: str = Depends(get_current_user)):
         )
         res = cursor.fetchall()
         
-        # Add debug log
+        #debug log
         print(f"Found {len(res) if res else 0} logs")
         
         if res:
@@ -652,7 +662,7 @@ async def get_validation_history():
         db = dbconnect()
         cursor = db.cursor()
         
-        # Use CTE to get only the latest request per employee
+        #only the latest request per employee
         cursor.execute("""
             WITH LatestRequests AS (
                 SELECT 
