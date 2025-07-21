@@ -37,6 +37,6 @@ This system leverages facial recognition technology (DeepFace) to accurately and
     * Python 3.12
     * MySQL (for database management)
     * OpenCV (for model)
-    * DeepFace (for facial recognition)
+    * AWS Face Rekognition (for facial recognition)
 * **Authentication:**
     * Bcrypt
