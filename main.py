@@ -21,20 +21,21 @@ import boto3
 from io import BytesIO
 from botocore.config import Config
 from botocore.exceptions import BotoCoreError, ClientError
+from dotenv import load_dotenv
 
 logging.basicConfig(level=logging.INFO)
 app = FastAPI(root_path="/stamp-backend")
 
-# Enable CORS
+# Frontend to Backend connection
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https:/172.16.200.127"],
+    allow_origins=["https:/172.16.200.127"], #test server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Secret key for signing tokens (testing purposes)
+# Secret key for signing tokens (for testing purposes)
 SECRET_KEY = "b1c0f7a9e92d4c41b54a0d674c6f5d8f76a497d1e2d3f0"
 ALGORITHM = "HS256"
 
@@ -42,16 +43,20 @@ ALGORITHM = "HS256"
 class LoginRequest(BaseModel):
     email: str
     password: str
+    
+# Load environment variables
+load_dotenv()
 
-# Database connection (testing before sending to .env)
+# Database connection function
 def dbconnect():
     return pymysql.connect(
-        host="172.16.200.127", # test server
-        user="stamp_user",
-        password="_Qwlc)Qv;505{$L!", # test password
-        database="stamp_db"
+        host=os.getenv("DB_HOST"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_NAME"),
     )
-# Function to create JWT token
+
+# create JWT token
 def create_token(emp_no: str):
     payload = {
         "emp_no": emp_no,
