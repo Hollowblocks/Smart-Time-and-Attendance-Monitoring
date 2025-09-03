@@ -4,7 +4,7 @@ FACIAL RECOGNITION TIME LOG SYSTEM
 
 ## Overview
 
-This system leverages facial recognition technology (DeepFace) to accurately and efficiently track employee time and attendance for the Department of Agriculture. It integrates with a camera system or webcam to capture images, processes these images to identify individuals, and logs their clock-in/clock-out times. It also automatically saves all necessary data (image data, time logs, account updates, image paths, etc.) into a database.
+This system leverages facial recognition technology (AWS Face Rekognition/ DeepFace) to accurately and efficiently track employee time and attendance for the Department of Agriculture. It integrates with a camera system or webcam to capture images, processes these images to identify individuals, and logs their clock-in/clock-out times. It also automatically saves all necessary data (image data, time logs, account updates, image paths, etc.) into a database.
 
 ## Modules and Features
 
