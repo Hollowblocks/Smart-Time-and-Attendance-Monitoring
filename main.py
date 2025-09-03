@@ -34,7 +34,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Secret key for signing tokens
+# Secret key for signing tokens (testing purposes)
 SECRET_KEY = "b1c0f7a9e92d4c41b54a0d674c6f5d8f76a497d1e2d3f0"
 ALGORITHM = "HS256"
 
@@ -43,12 +43,12 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
-# Database connection
+# Database connection (testing before sending to .env)
 def dbconnect():
     return pymysql.connect(
-        host="172.16.200.127",
+        host="172.16.200.127", # test server
         user="stamp_user",
-        password="_Qwlc)Qv;505{$L!",
+        password="_Qwlc)Qv;505{$L!", # test password
         database="stamp_db"
     )
 # Function to create JWT token
@@ -123,7 +123,7 @@ async def logout(emp_no: str = Depends(get_current_user), authorization: str = H
         detail="Invalid token format"
     )
 
-
+# testing AWS face rekognition
 '''
 session = boto3.Session(profile_name="aws-user")
 
